@@ -3,6 +3,7 @@ import mlflow
 import numpy as np
 import os
 import cv2 as cv
+import tensorflow as tf
 
 class LoadModel:
     def __init__(self):
@@ -19,6 +20,7 @@ class LoadModel:
 
     def load(self):
         self.model = mlflow.pyfunc.load_model(self.model_uri)
+        mlflow.pyfunc.get_model_dependencies(self.model_uri)
     
     def predict(self, image):
         predict = self.model.predict(image)
@@ -31,7 +33,6 @@ class PreprocessImage:
         self.img_size = (224,224)
 
     def preprocess(self, image):
-        image = tf.convert_to_tensor(image, dtype=tf.float32)
         image = tf.image.resize(image, self.img_size)
         image = tf.image.convert_image_dtype(image, tf.float32)
         image = tf.expand_dims(image, axis=0).numpy()
@@ -40,16 +41,15 @@ class PreprocessImage:
 
 class RealTimeCamera:
     def __init__(self):
-        self.face_classifier = cv.CascadeClassifier('haarcascade_frontalface_default.xml')
+        self.face_classifier = cv.CascadeClassifier(cv.data.haarcascades + './haarcascade_frontalface_default.xml')
         self.labels = ['Angry', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
     
     def capture_image(self, model, preprocess_image):
         capture = cv.VideoCapture(0)
         while True:
             _, frame = capture.read()
-            labels = []
 
-            img = cv.cvtColor(frame, cv.COLOR_RGB2GRAY)
+            img = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
             detected = self.face_classifier.detectMultiScale(img, scaleFactor=1.1, minNeighbors=5, minSize=(30,30))
 
             for rect in detected:
@@ -65,14 +65,12 @@ class RealTimeCamera:
                 cv.putText(frame, label, (x,y-10), cv.FONT_HERSHEY_PLAIN, 1.5, (0,255,0), 1)
             
             cv.imshow('Emotion', frame)
-
+            cv.waitKey(1)
 
 if __name__ == '__main__':
-    def load_model():
-        model = LoadModel.set_mlflow_tracking_url()
-        model = LoadModel.load()
-        return model
-
-    model = load_model()
-    preprocess = PreprocessImage
-    real_time_camera = RealTimeCamera.capture_image(model=model, preprocess_image=preprocess)
+    model = LoadModel()
+    model.set_mlflow_tracking_url()
+    model.load()
+    preprocess = PreprocessImage()
+    real_time_camera = RealTimeCamera()
+    real_time_camera.capture_image(model=model, preprocess_image=preprocess)
