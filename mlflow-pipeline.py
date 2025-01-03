@@ -20,8 +20,8 @@ class LoadModel:
         mlflow.set_tracking_uri(self.tracking_url)
 
     def load(self):
-        self.model = mlflow.pyfunc.load_model(self.logged_model)
-        mlflow.pyfunc.get_model_dependencies(self.logged_model)
+        self.model = mlflow.pyfunc.load_model(self.model_uri)
+        mlflow.pyfunc.get_model_dependencies(self.model_uri)
     
     def predict(self, image):
         predict = self.model.predict(image)
@@ -31,7 +31,7 @@ class LoadModel:
 
 class PreprocessImage:
     def __init__(self):
-        self.img_size = (48,48)
+        self.img_size = (224,224)
 
     def preprocess(self, image):
         image = tf.image.resize(image, self.img_size)
@@ -81,14 +81,14 @@ if __name__ == '__main__':
     model.set_mlflow_tracking_url()
     model.load()
     preprocess = PreprocessImage()
-    img = cv.imread("C:\\Users\\vinar\\OneDrive\\Pictures\\Screenshots\\Screenshot 2024-12-07 193236.png")
-    img = preprocess.preprocess(img)
+    # img = cv.imread("C:\\Users\\vinar\\OneDrive\\Pictures\\Screenshots\\Screenshot 2024-12-07 193236.png")
+    # img = preprocess.preprocess(img)
 
-    idx = model.predict(img)
+    # idx = model.predict(img)
 
-    real_time = RealTimeCamera()
-    labels = real_time.labels[idx]
-    print(labels)
-    # real_time_camera = RealTimeCamera()
-    # real_time_camera.capture_image(model=model, preprocess_image=preprocess)
+    # real_time = RealTimeCamera()
+    # labels = real_time.labels[idx]
+    # print(labels)
+    real_time_camera = RealTimeCamera()
+    real_time_camera.capture_image(model=model, preprocess_image=preprocess)
     
